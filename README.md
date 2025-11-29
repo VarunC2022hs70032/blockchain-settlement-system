@@ -11,8 +11,6 @@ This repository contains a complete implementation of a blockchain-based transac
 - **Student Name:** Varun C
 - **Campus ID:** 2022HS70032  
 - **Course:** SESAP ZG569 - Blockchain Technologies & Systems
-- **Faculty:** Dr. Ramakanthkumar P
-- **Institution:** Birla Institute of Technology & Science, Pilani
 
 ## 🏗️ System Architecture
 
@@ -207,16 +205,10 @@ This project demonstrates mastery of:
 
 This project is developed for academic purposes as part of BITS Pilani coursework.
 
-## 🤝 Contributing
-
-This is an academic project. For questions or discussions about the implementation, please contact the student through official academic channels.
-
-## 📞 Contact
 
 **Varun C**  
 Campus ID: 2022HS70032  
 Course: SESAP ZG569 - Blockchain Technologies & Systems  
-BITS Pilani - Work Integrated Learning Programmes Division
 
 ---
 
