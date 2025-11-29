@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Settlement System - Enterprise Dashboard</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
+    
+    <!-- Critical CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="./styles/modern-ui.css" rel="stylesheet">
+    
+    <!-- Meta tags for PWA and SEO -->
+    <meta name="description" content="Enterprise-grade blockchain transaction and settlement system with real-time monitoring">
+    <meta name="keywords" content="blockchain, cryptocurrency, settlement, transactions, enterprise, real-time">
+    <meta name="author" content="Blockchain Settlement System">
+    <meta name="robots" content="index, follow">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Blockchain Dashboard">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Blockchain Settlement System">
+    <meta property="og:description" content="Enterprise-grade blockchain with real-time monitoring">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛓️</text></svg>">
+    
+    <!-- Performance and Security -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    
+    <style>
+        /* Critical CSS for immediate rendering */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        /* Loading screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Error boundary styles */
+        .error-boundary {
+            padding: 2rem;
+            text-align: center;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 1rem;
+            margin: 2rem;
+        }
+        
+        /* Accessibility helpers */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        
+        /* Focus visible for better accessibility */
+        .focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
+        <div style="text-align: center;">
+            <div class="loader" aria-hidden="true"></div>
+            <div class="loading-text">
+                Initializing Blockchain Dashboard...
+            </div>
+        </div>
+    </div>
+
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only focus-visible">Skip to main content</a>
+
+    <!-- Main Application Container -->
+    <main id="main-content" class="app-container" role="main">
+        <!-- Navigation Bar -->
+        <nav class="top-navigation" role="navigation" aria-label="Main navigation">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-cube" aria-hidden="true"></i>
+                    <span class="nav-title">Blockchain System</span>
+                </div>
+                
+                <div class="nav-actions">
+                    <button class="nav-button" id="themeToggle" aria-label="Toggle theme" title="Switch theme">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+                    
+                    <button class="nav-button" id="fullscreenToggle" aria-label="Toggle fullscreen" title="Toggle fullscreen">
+                        <i class="fas fa-expand" aria-hidden="true"></i>
+                    </button>
+                    
+                    <button class="nav-button" id="notificationToggle" aria-label="View notifications" title="Notifications">
+                        <i class="fas fa-bell" aria-hidden="true"></i>
+                        <span class="notification-badge" id="notificationBadge" aria-hidden="true">0</span>
+                    </button>
+                    
+                    <div class="user-profile" id="userProfile">
+                        <i class="fas fa-user-circle" aria-hidden="true"></i>
+                        <span class="user-name" id="userName">Guest User</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="dashboard-wrapper" role="region" aria-label="Dashboard content">
+            <!-- Dashboard component will be injected here -->
+        </div>
+
+        <!-- Notification Panel -->
+        <div class="notification-panel" id="notificationPanel" role="complementary" aria-label="Notifications">
+            <div class="notification-header">
+                <h3>System Notifications</h3>
+                <button class="close-button" id="closeNotifications" aria-label="Close notifications">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="notification-list" id="notificationList">
+                <!-- Notifications will be populated here -->
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu" id="contextMenu" role="menu" aria-hidden="true">
+            <button class="context-item" role="menuitem">
+                <i class="fas fa-copy" aria-hidden="true"></i>
+                Copy Address
+            </button>
+            <button class="context-item" role="menuitem">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                View in Explorer
+            </button>
+            <button class="context-item" role="menuitem">
+                <i class="fas fa-share" aria-hidden="true"></i>
+                Share
+            </button>
+        </div>
+
+        <!-- Keyboard Shortcuts Help -->
+        <div class="shortcuts-modal" id="shortcutsModal" role="dialog" aria-labelledby="shortcutsTitle" aria-hidden="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="shortcutsTitle">Keyboard Shortcuts</h2>
+                    <button class="close-button" id="closeShortcuts" aria-label="Close shortcuts help">
+                        <i class="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <div class="shortcuts-grid">
+                    <div class="shortcut-group">
+                        <h3>Navigation</h3>
+                        <div class="shortcut-item">
+                            <kbd>D</kbd>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>M</kbd>
+                            <span>Mining</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>T</kbd>
+                            <span>Transactions</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>W</kbd>
+                            <span>Wallets</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-group">
+                        <h3>Actions</h3>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>M</kbd>
+                            <span>Mine Block</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                            <span>Send Transaction</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>F</kbd>
+                            <span>Fullscreen</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>?</kbd>
+                            <span>Show shortcuts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Error Boundary -->
+    <div class="error-boundary" id="errorBoundary" style="display: none;" role="alert">
+        <h2>🚨 Application Error</h2>
+        <p>Something went wrong. Please refresh the page or contact support.</p>
+        <button onclick="location.reload()" class="action-card primary">
+            <i class="fas fa-refresh" aria-hidden="true"></i>
+            Reload Application
+        </button>
+    </div>
+
+    <!-- WebSocket Connection Status -->
+    <div class="connection-status" id="connectionStatus" role="status" aria-live="polite">
+        <div class="status-indicator">
+            <div class="status-dot" id="statusDot"></div>
+            <span class="status-text" id="statusText">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        // Import our modern components
+        import { DashboardComponent } from './components/DashboardComponent.js';
+        import { stateManager } from './components/StateManager.js';
+
+        class BlockchainDashboardApp {
+            constructor() {
+                this.dashboard = null;
+                this.websocket = null;
+                this.isInitialized = false;
+                this.retryAttempts = 0;
+                this.maxRetries = 3;
+                
+                this.init();
+            }
+
+            async init() {
+                try {
+                    // Show loading screen
+                    this.showLoading();
+                    
+                    // Load saved state
+                    stateManager.loadFromLocalStorage();
+                    
+                    // Initialize components
+                    await this.initializeComponents();
+                    
+                    // Setup WebSocket
+                    this.setupWebSocket();
+                    
+                    // Setup event listeners
+                    this.setupEventListeners();
+                    
+                    // Setup keyboard shortcuts
+                    this.setupKeyboardShortcuts();
+                    
+                    // Setup accessibility features
+                    this.setupAccessibility();
+                    
+                    // Load initial data
+                    await this.loadInitialData();
+                    
+                    // Hide loading screen
+                    this.hideLoading();
+                    
+                    this.isInitialized = true;
+                    console.log('✅ Blockchain Dashboard initialized successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Failed to initialize dashboard:', error);
+                    this.showError(error);
+                }
+            }
+
+            async initializeComponents() {
+                // Initialize dashboard component
+                this.dashboard = new DashboardComponent();
+                
+                // Subscribe to navigation events using the component's subscription system
+                this.dashboard.subscribe((state) => {
+                    // Handle state changes
+                    console.log('Dashboard state updated:', state);
+                });
+                
+                // Mount the dashboard to the correct container
+                const container = document.getElementById('dashboard');
+                if (container) {
+                    this.dashboard.mount(container);
+                    
+                    // Listen for custom events on the container element
+                    container.addEventListener('navigate', (event) => {
+                        this.navigateToSection(event.detail.section);
+                    });
+                    
+                    // Manually call bindEvents since the component might not be doing it automatically
+                    if (typeof this.dashboard.bindEvents === 'function') {
+                        this.dashboard.bindEvents();
+                    }
+                }
+            }
+
+            setupWebSocket() {
+                try {
+                    const wsUrl = `ws://${window.location.hostname}:${window.location.port}/ws`;
+                    this.websocket = new WebSocket(wsUrl);
+                    
+                    this.websocket.onopen = () => {
+                        console.log('🔗 WebSocket connected');
+                        stateManager.updateBlockchainStats({ isConnected: true });
+                        this.updateConnectionStatus(true);
+                        this.retryAttempts = 0;
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        try {
+                            const message = JSON.parse(event.data);
+                            this.handleWebSocketMessage(message);
+                        } catch (error) {
+                            console.error('Failed to parse WebSocket message:', error);
+                        }
+                    };
+                    
+                    this.websocket.onclose = () => {
+                        console.log('🔌 WebSocket disconnected');
+                        stateManager.updateBlockchainStats({ isConnected: false });
+                        this.updateConnectionStatus(false);
+                        
+                        // Attempt to reconnect
+                        if (this.retryAttempts < this.maxRetries) {
+                            setTimeout(() => {
+                                this.retryAttempts++;
+                                this.setupWebSocket();
+                            }, 3000 * this.retryAttempts);
+                        }
+                    };
+                    
+                    this.websocket.onerror = (error) => {
+                        console.error('WebSocket error:', error);
+                        stateManager.addNotification({
+                            type: 'error',
+                            title: 'Connection Error',
+                            message: 'Failed to connect to blockchain network'
+                        });
+                    };
+                } catch (error) {
+                    console.error('Failed to setup WebSocket:', error);
+                    this.updateConnectionStatus(false);
+                }
+            }
+
+            handleWebSocketMessage(message) {
+                switch (message.type) {
+                    case 'blockMined':
+                        stateManager.addEvent({
+                            type: 'block',
+                            message: `Block #${message.data.block.height} mined`,
+                            level: 'success'
+                        });
+                        this.showNotification('Block Mined', `New block #${message.data.block.height} added to chain`);
+                        break;
+                        
+                    case 'transactionAdded':
+                        stateManager.addEvent({
+                            type: 'transaction',
+                            message: `Transaction added: ${message.data.transaction.amount} BTC`,
+                            level: 'info'
+                        });
+                        break;
+                        
+                    case 'miningStarted':
+                        stateManager.addEvent({
+                            type: 'mining',
+                            message: `Mining started with difficulty ${message.data.difficulty}`,
+                            level: 'warning'
+                        });
+                        break;
+                        
+                    default:
+                        console.log('Unknown WebSocket message type:', message.type);
+                }
+            }
+
+            setupEventListeners() {
+                // Theme toggle
+                document.getElementById('themeToggle')?.addEventListener('click', () => {
+                    this.toggleTheme();
+                });
+                
+                // Fullscreen toggle
+                document.getElementById('fullscreenToggle')?.addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+                
+                // Notifications
+                document.getElementById('notificationToggle')?.addEventListener('click', () => {
+                    this.toggleNotifications();
+                });
+                
+                // Close notifications
+                document.getElementById('closeNotifications')?.addEventListener('click', () => {
+                    this.hideNotifications();
+                });
+                
+                // Window events
+                window.addEventListener('beforeunload', () => {
+                    stateManager.saveToLocalStorage();
+                });
+                
+                window.addEventListener('resize', this.debounce(() => {
+                    this.handleResize();
+                }, 250));
+                
+                // Visibility change for performance
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        // Pause animations when tab is not visible
+                        document.body.classList.add('tab-hidden');
+                    } else {
+                        document.body.classList.remove('tab-hidden');
+                    }
+                });
+            }
+
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    // Don't trigger shortcuts if user is typing in an input
+                    if (e.target.matches('input, textarea, select')) return;
+                    
+                    switch (e.key.toLowerCase()) {
+                        case 'd':
+                            if (!e.ctrlKey && !e.metaKey) {
+                                this.navigateToSection('dashboard');
+                                e.preventDefault();
+                            }
+                            break;
+                            
+                        case 'm':
+                            if (e.ctrlKey || e.metaKey) {
+                                this.triggerMining();
+                                e.preventDefault();
+                            } else {
+                                this.navigateToSection('mining');
+                                e.preventDefault();
+                            }
+                            break;
+                            
+                        case 't':
+                            if (!e.ctrlKey && !e.metaKey) {
+                                this.navigateToSection('transactions');
+                                e.preventDefault();
+                            }
+                            break;
+                            
+                        case 'w':
+                            if (!e.ctrlKey && !e.metaKey) {
+                                this.navigateToSection('wallets');
+                                e.preventDefault();
+                            }
+                            break;
+                            
+                        case 'f':
+                            if (!e.ctrlKey && !e.metaKey) {
+                                this.toggleFullscreen();
+                                e.preventDefault();
+                            }
+                            break;
+                            
+                        case '?':
+                            this.showShortcutsHelp();
+                            e.preventDefault();
+                            break;
+                            
+                        case 'escape':
+                            this.hideModals();
+                            break;
+                    }
+                });
+            }
+
+            setupAccessibility() {
+                // Add skip links
+                this.addSkipLinks();
+                
+                // Setup focus management
+                this.setupFocusManagement();
+                
+                // Add ARIA live regions
+                this.setupLiveRegions();
+                
+                // Setup reduced motion support
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    document.body.classList.add('reduced-motion');
+                }
+            }
+
+            async loadInitialData() {
+                try {
+                    // Load blockchain stats
+                    const statsResponse = await fetch('/api/stats');
+                    const stats = await statsResponse.json();
+                    stateManager.updateBlockchainStats(stats);
+                    
+                    // Check for existing user session
+                    const sessionToken = localStorage.getItem('sessionToken');
+                    if (sessionToken) {
+                        const userResponse = await fetch('/api/profiles/me', {
+                            headers: { 'Authorization': `Bearer ${sessionToken}` }
+                        });
+                        
+                        if (userResponse.ok) {
+                            const user = await userResponse.json();
+                            stateManager.updateUserProfile({
+                                ...user,
+                                isAuthenticated: true
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to load initial data:', error);
+                    stateManager.addNotification({
+                        type: 'warning',
+                        title: 'Data Loading Issue',
+                        message: 'Some data may not be up to date'
+                    });
+                }
+            }
+
+            // UI Methods
+            showLoading() {
+                document.getElementById('loadingScreen')?.classList.remove('hidden');
+            }
+
+            hideLoading() {
+                setTimeout(() => {
+                    document.getElementById('loadingScreen')?.classList.add('hidden');
+                }, 500);
+            }
+
+            showError(error) {
+                const errorBoundary = document.getElementById('errorBoundary');
+                if (errorBoundary) {
+                    errorBoundary.style.display = 'block';
+                    errorBoundary.querySelector('p').textContent = error.message || 'An unknown error occurred';
+                }
+                this.hideLoading();
+            }
+
+            updateConnectionStatus(connected) {
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                
+                if (statusDot && statusText) {
+                    statusDot.className = connected ? 'status-dot connected' : 'status-dot disconnected';
+                    statusText.textContent = connected ? 'Connected' : 'Disconnected';
+                }
+            }
+
+            showNotification(title, message) {
+                // Use browser notification if permitted
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, {
+                        body: message,
+                        icon: '/favicon.ico',
+                        badge: '/favicon.ico'
+                    });
+                }
+                
+                // Also show in-app notification
+                stateManager.addNotification({
+                    type: 'info',
+                    title,
+                    message
+                });
+            }
+
+            toggleTheme() {
+                const currentTheme = stateManager.getUIState().theme;
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                stateManager.updateUIState({ theme: newTheme });
+                document.body.className = `theme-${newTheme}`;
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen?.();
+                } else {
+                    document.exitFullscreen?.();
+                }
+            }
+
+            toggleNotifications() {
+                const panel = document.getElementById('notificationPanel');
+                panel?.classList.toggle('active');
+            }
+
+            hideNotifications() {
+                document.getElementById('notificationPanel')?.classList.remove('active');
+            }
+
+            navigateToSection(section) {
+                stateManager.updateUIState({ activeSection: section });
+                console.log(`Navigating to: ${section}`);
+            }
+
+            triggerMining() {
+                // This would trigger mining logic
+                console.log('Mining triggered via keyboard shortcut');
+            }
+
+            showShortcutsHelp() {
+                document.getElementById('shortcutsModal')?.classList.add('active');
+            }
+
+            hideModals() {
+                document.querySelectorAll('.modal, .panel').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+
+            handleResize() {
+                // Handle responsive adjustments
+                const width = window.innerWidth;
+                document.body.classList.toggle('mobile', width < 768);
+                document.body.classList.toggle('tablet', width >= 768 && width < 1024);
+                document.body.classList.toggle('desktop', width >= 1024);
+            }
+
+            // Utility methods
+            debounce(func, wait) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+
+            addSkipLinks() {
+                // Skip links are already in HTML
+            }
+
+            setupFocusManagement() {
+                // Focus management for modals and navigation
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Tab') {
+                        // Handle tab trapping in modals
+                        this.handleTabTrapping(e);
+                    }
+                });
+            }
+
+            setupLiveRegions() {
+                // ARIA live regions for dynamic updates
+                const liveRegion = document.createElement('div');
+                liveRegion.setAttribute('aria-live', 'polite');
+                liveRegion.setAttribute('aria-atomic', 'true');
+                liveRegion.className = 'sr-only';
+                liveRegion.id = 'liveRegion';
+                document.body.appendChild(liveRegion);
+            }
+
+            handleTabTrapping(e) {
+                // Implement tab trapping for better accessibility
+                const activeModal = document.querySelector('.modal.active');
+                if (activeModal) {
+                    const focusableElements = activeModal.querySelectorAll(
+                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                    );
+                    
+                    const firstElement = focusableElements[0];
+                    const lastElement = focusableElements[focusableElements.length - 1];
+                    
+                    if (e.shiftKey && document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    } else if (!e.shiftKey && document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        }
+
+        // Initialize the application when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                new BlockchainDashboardApp();
+            });
+        } else {
+            new BlockchainDashboardApp();
+        }
+
+        // Global error handling
+        window.addEventListener('error', (error) => {
+            console.error('Global error:', error);
+            document.getElementById('errorBoundary')?.style.setProperty('display', 'block');
+        });
+
+        // Unhandled promise rejection handling
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            event.preventDefault();
+        });
+    </script>
+
+    <!-- Additional styles for the new components -->
+    <style>
+        /* Navigation styles */
+        .top-navigation {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Notification panel */
+        .notification-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 2rem;
+        }
+
+        .notification-panel.active {
+            right: 0;
+        }
+
+        /* Connection status */
+        .connection-status {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 0.75rem 1rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Keyboard shortcuts modal */
+        .shortcuts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .shortcuts-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        kbd {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        /* Performance optimizations */
+        .tab-hidden * {
+            animation-play-state: paused !important;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 1rem;
+            }
+            
+            .nav-actions {
+                gap: 0.5rem;
+            }
+            
+            .user-name {
+                display: none;
+            }
+            
+            .notification-panel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .shortcuts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>

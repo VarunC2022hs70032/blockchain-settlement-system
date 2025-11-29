@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Settlement System - Dashboard</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link href="./styles/modern-ui.css" rel="stylesheet">
+    
+    <style>
+        /* Additional inline styles for immediate rendering */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .app-container {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .app-container.loaded {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div style="text-align: center;">
+            <div class="loader"></div>
+            <div style="margin-top: 1rem; font-size: 1.1rem; opacity: 0.9; color: white;">
+                Loading Blockchain Dashboard...
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app-container">
+        <!-- Navigation -->
+        <nav class="top-navigation">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <i class="fas fa-cube rotating-icon"></i>
+                    <span class="nav-title">Blockchain System</span>
+                </div>
+                
+                <div class="nav-actions">
+                    <button class="nav-button" onclick="toggleTheme()">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    
+                    <button class="nav-button" onclick="toggleFullscreen()">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                    
+                    <div class="user-profile">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="user-name">Guest User</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            <!-- Header -->
+            <header class="dashboard-header">
+                <div class="header-content">
+                    <div class="header-title">
+                        <h1>
+                            <i class="fas fa-cube rotating-icon"></i>
+                            Blockchain Settlement System
+                        </h1>
+                        <p class="subtitle">Enterprise-grade blockchain with real-time monitoring</p>
+                    </div>
+                    
+                    <div class="connection-indicator">
+                        <div class="status-badge connected" id="connectionStatus">
+                            <div class="status-dot"></div>
+                            <span class="status-text">Connected</span>
+                            <span class="client-count" id="clientCount">0 clients</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card blockchain-height">
+                    <div class="stat-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="blockHeight">0</div>
+                        <div class="stat-label">Block Height</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span class="trend-text">+1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card hash-rate">
+                    <div class="stat-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="hashRate">0.0 H/s</div>
+                        <div class="stat-label">Hash Rate</div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="trend-text">Stable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card total-supply">
+                    <div class="stat-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalSupply">0.0000</div>
+                        <div class="stat-label">Total Supply (BTC)</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-plus-circle"></i>
+                            <span class="trend-text">Mining Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card difficulty">
+                    <div class="stat-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="difficulty">0</div>
+                        <div class="stat-label">Difficulty</div>
+                        <div class="stat-trend neutral">
+                            <i class="fas fa-balance-scale"></i>
+                            <span class="trend-text">Stable</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card mempool-size">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="memPoolSize">0</div>
+                        <div class="stat-label">Pending Transactions</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-clock"></i>
+                            <span class="trend-text">Normal</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card user-balance">
+                    <div class="stat-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="userBalance">0.0000</div>
+                        <div class="stat-label">Your Balance (BTC)</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span class="trend-text">≈$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h2 class="section-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h2>
+                
+                <div class="actions-grid">
+                    <button class="action-card primary" onclick="mineBlock()">
+                        <div class="action-icon">
+                            <i class="fas fa-pickaxe"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Mine Block</h3>
+                            <p>Start mining a new block</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </button>
+
+                    <button class="action-card success" onclick="createWallet()">
+                        <div class="action-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Create Wallet</h3>
+                            <p>Generate new wallet address</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </button>
+
+                    <button class="action-card info" onclick="viewBlockchain()">
+                        <div class="action-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Blockchain Explorer</h3>
+                            <p>Browse blocks and transactions</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </button>
+
+                    <button class="action-card warning" onclick="refreshStats()">
+                        <div class="action-icon">
+                            <i class="fas fa-refresh"></i>
+                        </div>
+                        <div class="action-content">
+                            <h3>Refresh Data</h3>
+                            <p>Update blockchain statistics</p>
+                        </div>
+                        <div class="action-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="system-health">
+                <h2 class="section-title">
+                    <i class="fas fa-heartbeat"></i>
+                    System Health
+                </h2>
+                
+                <div class="health-grid">
+                    <div class="health-metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Network Status</span>
+                            <span class="metric-status healthy" id="networkStatus">HEALTHY</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div class="metric-progress" style="width: 100%" id="networkProgress"></div>
+                        </div>
+                    </div>
+
+                    <div class="health-metric">
+                        <div class="metric-header">
+                            <span class="metric-name">System Load</span>
+                            <span class="metric-value" id="systemLoad">25%</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div class="metric-progress" style="width: 25%" id="loadProgress"></div>
+                        </div>
+                    </div>
+
+                    <div class="health-metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Connection Quality</span>
+                            <span class="metric-status good" id="connectionQuality">GOOD</span>
+                        </div>
+                        <div class="metric-bar">
+                            <div class="metric-progress" style="width: 90%" id="qualityProgress"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let blockchainStats = {
+            blockCount: 0,
+            totalTransactions: 0,
+            totalSupply: 0,
+            difficulty: 0,
+            hashRate: 0,
+            memPoolSize: 0
+        };
+        
+        let isConnected = false;
+        let updateInterval = null;
+
+        // Initialize application
+        async function initApp() {
+            console.log('🚀 Initializing Blockchain Dashboard...');
+            
+            try {
+                // Load initial data
+                await loadBlockchainStats();
+                
+                // Setup periodic updates
+                setupPeriodicUpdates();
+                
+                // Setup WebSocket (if available)
+                setupWebSocket();
+                
+                // Hide loading screen and show app
+                document.getElementById('loadingScreen').classList.add('hidden');
+                document.getElementById('app').classList.add('loaded');
+                
+                console.log('✅ Dashboard initialized successfully!');
+                showNotification('Dashboard Ready', 'Blockchain dashboard loaded successfully');
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize dashboard:', error);
+                showError('Failed to initialize dashboard. Please refresh the page.');
+            }
+        }
+
+        // Load blockchain statistics
+        async function loadBlockchainStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error('Failed to fetch stats');
+                
+                const stats = await response.json();
+                blockchainStats = stats;
+                updateUI();
+                
+            } catch (error) {
+                console.error('Failed to load blockchain stats:', error);
+                // Use mock data for demonstration
+                blockchainStats = {
+                    blockCount: 19,
+                    totalTransactions: 19,
+                    totalSupply: 950,
+                    difficulty: 3,
+                    hashRate: 234.5,
+                    memPoolSize: 0
+                };
+                updateUI();
+            }
+        }
+
+        // Update UI with current stats
+        function updateUI() {
+            // Update stat values with animation
+            animateStatUpdate('blockHeight', blockchainStats.blockCount);
+            animateStatUpdate('totalSupply', blockchainStats.totalSupply.toFixed(4));
+            animateStatUpdate('difficulty', blockchainStats.difficulty);
+            animateStatUpdate('memPoolSize', blockchainStats.memPoolSize);
+            animateStatUpdate('hashRate', formatHashRate(blockchainStats.hashRate));
+            
+            // Update connection status
+            updateConnectionStatus(true);
+            
+            // Update system health
+            updateSystemHealth();
+        }
+
+        // Animate stat value updates
+        function animateStatUpdate(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const currentValue = element.textContent;
+            if (currentValue === newValue.toString()) return;
+            
+            // Animate the change
+            element.style.transform = 'scale(1.05)';
+            element.style.color = '#00ff00';
+            
+            setTimeout(() => {
+                element.textContent = newValue;
+                element.style.transform = 'scale(1)';
+                element.style.color = '';
+            }, 150);
+        }
+
+        // Format hash rate
+        function formatHashRate(hashRate) {
+            if (hashRate >= 1e12) {
+                return `${(hashRate / 1e12).toFixed(1)} TH/s`;
+            } else if (hashRate >= 1e9) {
+                return `${(hashRate / 1e9).toFixed(1)} GH/s`;
+            } else if (hashRate >= 1e6) {
+                return `${(hashRate / 1e6).toFixed(1)} MH/s`;
+            } else if (hashRate >= 1e3) {
+                return `${(hashRate / 1e3).toFixed(1)} KH/s`;
+            } else {
+                return `${Math.round(hashRate)} H/s`;
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.className = connected ? 'status-badge connected' : 'status-badge disconnected';
+                statusElement.querySelector('.status-text').textContent = connected ? 'Connected' : 'Disconnected';
+            }
+            isConnected = connected;
+        }
+
+        // Update system health metrics
+        function updateSystemHealth() {
+            const systemLoad = Math.min((blockchainStats.memPoolSize / 10) * 100, 100);
+            document.getElementById('systemLoad').textContent = `${Math.round(systemLoad)}%`;
+            document.getElementById('loadProgress').style.width = `${systemLoad}%`;
+            
+            const networkStatus = isConnected ? 'HEALTHY' : 'DISCONNECTED';
+            const networkElement = document.getElementById('networkStatus');
+            networkElement.textContent = networkStatus;
+            networkElement.className = isConnected ? 'metric-status healthy' : 'metric-status disconnected';
+            
+            document.getElementById('networkProgress').style.width = isConnected ? '100%' : '0%';
+            document.getElementById('qualityProgress').style.width = isConnected ? '90%' : '30%';
+        }
+
+        // Setup periodic updates
+        function setupPeriodicUpdates() {
+            updateInterval = setInterval(() => {
+                loadBlockchainStats();
+            }, 5000); // Update every 5 seconds
+        }
+
+        // Setup WebSocket connection
+        function setupWebSocket() {
+            try {
+                const wsUrl = `ws://${window.location.hostname}:${window.location.port}/ws`;
+                const websocket = new WebSocket(wsUrl);
+                
+                websocket.onopen = () => {
+                    console.log('🔗 WebSocket connected');
+                    updateConnectionStatus(true);
+                };
+                
+                websocket.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        handleWebSocketMessage(message);
+                    } catch (error) {
+                        console.error('Failed to parse WebSocket message:', error);
+                    }
+                };
+                
+                websocket.onclose = () => {
+                    console.log('🔌 WebSocket disconnected');
+                    updateConnectionStatus(false);
+                };
+                
+            } catch (error) {
+                console.error('Failed to setup WebSocket:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(message) {
+            switch (message.type) {
+                case 'blockMined':
+                    showNotification('Block Mined!', `New block #${message.data.block.height} added to chain`);
+                    loadBlockchainStats(); // Refresh stats
+                    break;
+                    
+                case 'transactionAdded':
+                    showNotification('New Transaction', `Transaction of ${message.data.transaction.amount} BTC added`);
+                    break;
+                    
+                default:
+                    console.log('Unknown WebSocket message:', message);
+            }
+        }
+
+        // Action handlers
+        async function mineBlock() {
+            try {
+                showNotification('Mining Started', 'Mining new block...');
+                
+                const response = await fetch('/api/mine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ minerAddress: 'dashboard-miner' })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showNotification('Block Mined!', `Block #${result.height} mined successfully`);
+                    loadBlockchainStats(); // Refresh stats
+                } else {
+                    throw new Error('Mining failed');
+                }
+                
+            } catch (error) {
+                console.error('Mining error:', error);
+                showError('Failed to mine block. Please try again.');
+            }
+        }
+
+        async function createWallet() {
+            try {
+                const response = await fetch('/api/keypair', { method: 'POST' });
+                if (response.ok) {
+                    const wallet = await response.json();
+                    showNotification('Wallet Created!', `Address: ${wallet.address.substring(0, 20)}...`);
+                    console.log('New wallet:', wallet);
+                } else {
+                    throw new Error('Wallet creation failed');
+                }
+            } catch (error) {
+                console.error('Wallet creation error:', error);
+                showError('Failed to create wallet. Please try again.');
+            }
+        }
+
+        function viewBlockchain() {
+            window.open('/frontend/blockchain-visualizer.html', '_blank');
+        }
+
+        function refreshStats() {
+            loadBlockchainStats();
+            showNotification('Data Refreshed', 'Blockchain statistics updated');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            showNotification('Theme Changed', 'Theme toggled successfully');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.();
+            } else {
+                document.exitFullscreen?.();
+            }
+        }
+
+        // Notification system
+        function showNotification(title, message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'notification success';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <strong>${title}</strong>
+                    <p>${message}</p>
+                </div>
+            `;
+            
+            // Add styles
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(67, 233, 123, 0.9);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                backdrop-filter: blur(10px);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Auto remove
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification error';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <strong>Error</strong>
+                    <p>${message}</p>
+                </div>
+            `;
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(255, 107, 107, 0.9);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                backdrop-filter: blur(10px);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.matches('input, textarea, select')) return;
+            
+            switch (e.key.toLowerCase()) {
+                case 'm':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        mineBlock();
+                    }
+                    break;
+                    
+                case 'r':
+                    if (e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        refreshStats();
+                    }
+                    break;
+                    
+                case 'f':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        toggleFullscreen();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (updateInterval) {
+                clearInterval(updateInterval);
+            }
+        });
+    </script>
+</body>
+</html>

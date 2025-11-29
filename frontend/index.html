@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Settlement System - Varun C (2022HS70032)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .student-info {
+            text-align: right;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 100px auto 2rem;
+            padding: 0 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row > * {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-mine {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .wallet-list, .transaction-list, .block-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .wallet-item, .transaction-item, .block-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wallet-item:last-child, .transaction-item:last-child, .block-item:last-child {
+            border-bottom: none;
+        }
+
+        .wallet-item:hover, .transaction-item:hover, .block-item:hover {
+            background: #f8f9fa;
+        }
+
+        .address {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .balance {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #28a745;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .hash {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .timestamp {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+                margin-top: 120px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🔗 Blockchain Settlement System</div>
+            <div class="student-info">
+                <div><strong>Varun C</strong></div>
+                <div>2022HS70032</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- System Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalBlocks">0</div>
+                <div class="stat-label">Total Blocks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalTransactions">0</div>
+                <div class="stat-label">Total Transactions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalWallets">0</div>
+                <div class="stat-label">Wallets Created</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingTx">0</div>
+                <div class="stat-label">Pending Transactions</div>
+            </div>
+        </div>
+
+        <!-- Wallet Management -->
+        <div class="section">
+            <h2 class="section-title">💰 Wallet Management</h2>
+            
+            <div class="form-row">
+                <div>
+                    <label for="walletLabel">Wallet Label:</label>
+                    <input type="text" id="walletLabel" placeholder="Enter wallet label (optional)">
+                </div>
+                <div>
+                    <button onclick="createWallet()" id="createWalletBtn">Create New Wallet</button>
+                </div>
+            </div>
+
+            <div id="walletMessages"></div>
+            
+            <h3 style="margin-bottom: 1rem;">Your Wallets:</h3>
+            <div class="wallet-list" id="walletList">
+                <div style="padding: 2rem; text-align: center; color: #666;">
+                    No wallets created yet. Create your first wallet above!
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Creation -->
+        <div class="section">
+            <h2 class="section-title">💸 Send Transaction</h2>
+            
+            <div class="form-row">
+                <div>
+                    <label for="fromWallet">From Wallet:</label>
+                    <select id="fromWallet">
+                        <option value="">Select sender wallet</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="toAddress">To Address:</label>
+                    <input type="text" id="toAddress" placeholder="Enter recipient address">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div>
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" step="0.01" min="0.01" placeholder="Enter amount">
+                </div>
+                <div>
+                    <button onclick="createTransaction()" id="createTxBtn">Send Transaction</button>
+                </div>
+            </div>
+
+            <div id="transactionMessages"></div>
+        </div>
+
+        <!-- Mining -->
+        <div class="section">
+            <h2 class="section-title">⛏️ Mining</h2>
+            
+            <div class="form-row">
+                <div>
+                    <label for="minerWallet">Miner Wallet:</label>
+                    <select id="minerWallet">
+                        <option value="">Select miner wallet</option>
+                    </select>
+                </div>
+                <div>
+                    <button onclick="mineBlock()" id="mineBtn" class="btn-mine">Mine New Block</button>
+                </div>
+            </div>
+
+            <div id="miningMessages"></div>
+        </div>
+
+        <!-- Recent Blocks -->
+        <div class="section">
+            <h2 class="section-title">🔗 Recent Blocks</h2>
+            <div class="block-list" id="blockList">
+                <div style="padding: 2rem; text-align: center; color: #666;">
+                    Loading blocks...
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section">
+            <h2 class="section-title">📊 Recent Transactions</h2>
+            <div class="transaction-list" id="transactionList">
+                <div style="padding: 2rem; text-align: center; color: #666;">
+                    Loading transactions...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let wallets = [];
+        let stats = {};
+
+        // API base URL
+        const API_BASE = '';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadWallets();
+            loadBlocks();
+            loadTransactions();
+            
+            // Auto-refresh every 10 seconds
+            setInterval(() => {
+                loadStats();
+                loadWallets();
+                loadBlocks();
+                loadTransactions();
+            }, 10000);
+        });
+
+        // Utility functions
+        function showMessage(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${isError ? 'error' : 'success'}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+
+        function setLoading(buttonId, loading = true) {
+            const button = document.getElementById(buttonId);
+            if (loading) {
+                button.innerHTML = '<span class="loading"></span> Processing...';
+                button.disabled = true;
+            } else {
+                button.disabled = false;
+                // Restore original text
+                if (buttonId === 'createWalletBtn') button.innerHTML = 'Create New Wallet';
+                if (buttonId === 'createTxBtn') button.innerHTML = 'Send Transaction';
+                if (buttonId === 'mineBtn') button.innerHTML = 'Mine New Block';
+            }
+        }
+
+        function truncateHash(hash, length = 8) {
+            return hash.length > length ? `${hash.substring(0, length)}...${hash.substring(hash.length - 4)}` : hash;
+        }
+
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString();
+        }
+
+        // API calls
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(`${API_BASE}/api${endpoint}`, options);
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Load system stats
+        async function loadStats() {
+            const result = await apiCall('/stats');
+            if (result.success) {
+                stats = result.data;
+                document.getElementById('totalBlocks').textContent = stats.totalBlocks;
+                document.getElementById('totalTransactions').textContent = stats.totalTransactions;
+                document.getElementById('totalWallets').textContent = stats.totalWallets;
+                document.getElementById('pendingTx').textContent = stats.pendingTransactions;
+            }
+        }
+
+        // Load wallets
+        async function loadWallets() {
+            const result = await apiCall('/wallet/all');
+            if (result.success) {
+                wallets = result.data;
+                updateWalletDisplay();
+                updateWalletSelectors();
+            }
+        }
+
+        // Update wallet display
+        function updateWalletDisplay() {
+            const walletList = document.getElementById('walletList');
+            
+            if (wallets.length === 0) {
+                walletList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No wallets created yet. Create your first wallet above!</div>';
+                return;
+            }
+
+            walletList.innerHTML = wallets.map(wallet => `
+                <div class="wallet-item">
+                    <div>
+                        <div style="font-weight: bold;">${wallet.address.startsWith('1') ? truncateHash(wallet.address, 20) : wallet.address}</div>
+                        <div class="address">${wallet.address}</div>
+                    </div>
+                    <div class="balance">${wallet.balance} coins</div>
+                </div>
+            `).join('');
+        }
+
+        // Update wallet selectors
+        function updateWalletSelectors() {
+            const fromSelector = document.getElementById('fromWallet');
+            const minerSelector = document.getElementById('minerWallet');
+            
+            const options = wallets.map(wallet => 
+                `<option value="${wallet.address}">${truncateHash(wallet.address, 15)} (${wallet.balance} coins)</option>`
+            ).join('');
+            
+            fromSelector.innerHTML = '<option value="">Select sender wallet</option>' + options;
+            minerSelector.innerHTML = '<option value="">Select miner wallet</option>' + options;
+        }
+
+        // Create wallet
+        async function createWallet() {
+            const label = document.getElementById('walletLabel').value || 'New Account';
+            
+            setLoading('createWalletBtn', true);
+            
+            const result = await apiCall('/wallet/create', 'POST', { label });
+            
+            setLoading('createWalletBtn', false);
+            
+            if (result.success) {
+                showMessage('walletMessages', `Wallet created successfully! Address: ${result.data.address}`);
+                document.getElementById('walletLabel').value = '';
+                loadWallets();
+                loadStats();
+            } else {
+                showMessage('walletMessages', `Error: ${result.error}`, true);
+            }
+        }
+
+        // Create transaction
+        async function createTransaction() {
+            const from = document.getElementById('fromWallet').value;
+            const to = document.getElementById('toAddress').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            
+            if (!from || !to || !amount) {
+                showMessage('transactionMessages', 'Please fill in all fields', true);
+                return;
+            }
+            
+            setLoading('createTxBtn', true);
+            
+            const result = await apiCall('/transaction/create', 'POST', { from, to, amount });
+            
+            setLoading('createTxBtn', false);
+            
+            if (result.success) {
+                showMessage('transactionMessages', `Transaction created successfully! ID: ${result.data.id}`);
+                document.getElementById('toAddress').value = '';
+                document.getElementById('amount').value = '';
+                loadStats();
+                loadTransactions();
+            } else {
+                showMessage('transactionMessages', `Error: ${result.error}`, true);
+            }
+        }
+
+        // Mine block
+        async function mineBlock() {
+            const minerAddress = document.getElementById('minerWallet').value;
+            
+            if (!minerAddress) {
+                showMessage('miningMessages', 'Please select a miner wallet', true);
+                return;
+            }
+            
+            setLoading('mineBtn', true);
+            showMessage('miningMessages', 'Mining in progress... This may take a few seconds.');
+            
+            const result = await apiCall('/mine', 'POST', { minerAddress });
+            
+            setLoading('mineBtn', false);
+            
+            if (result.success) {
+                showMessage('miningMessages', `Block #${result.data.index} mined successfully! Time: ${result.miningTime}`);
+                loadStats();
+                loadWallets();
+                loadBlocks();
+                loadTransactions();
+            } else {
+                showMessage('miningMessages', `Error: ${result.error}`, true);
+            }
+        }
+
+        // Load blocks
+        async function loadBlocks() {
+            const result = await apiCall('/blocks?limit=5');
+            const blockList = document.getElementById('blockList');
+            
+            if (result.success && result.data.length > 0) {
+                blockList.innerHTML = result.data.map(block => `
+                    <div class="block-item">
+                        <div>
+                            <div style="font-weight: bold;">Block #${block.index}</div>
+                            <div class="hash">${truncateHash(block.hash)}</div>
+                            <div class="timestamp">${formatTimestamp(block.timestamp)}</div>
+                        </div>
+                        <div>
+                            <div>${block.transactions.length} transactions</div>
+                            <div style="font-size: 0.8rem; color: #666;">Nonce: ${block.nonce}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                blockList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No blocks found</div>';
+            }
+        }
+
+        // Load transactions
+        async function loadTransactions() {
+            const result = await apiCall('/transactions/all');
+            const transactionList = document.getElementById('transactionList');
+            
+            if (result.success && result.data.length > 0) {
+                const recentTransactions = result.data.slice(-10).reverse(); // Last 10, newest first
+                
+                transactionList.innerHTML = recentTransactions.map(tx => `
+                    <div class="transaction-item">
+                        <div>
+                            <div style="font-weight: bold;">${tx.from === 'system' ? '🏆 Mining Reward' : '💸 Transfer'}</div>
+                            <div class="address">${truncateHash(tx.id)}</div>
+                            <div class="timestamp">${formatTimestamp(tx.timestamp)}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: #28a745;">${tx.amount} coins</div>
+                            <div style="font-size: 0.8rem; color: #666;">
+                                ${truncateHash(tx.from, 8)} → ${truncateHash(tx.to, 8)}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                transactionList.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No transactions found</div>';
+            }
+        }
+    </script>
+</body>
+</html>

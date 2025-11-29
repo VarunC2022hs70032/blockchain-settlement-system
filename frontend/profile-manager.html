@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Profile Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .card-header .icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #cce7ff;
+            border: 1px solid #99d3ff;
+            color: #004085;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            margin: 0 auto 20px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .profile-info .username {
+            color: #667eea;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .profile-info .email {
+            color: #666;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .wallet-list {
+            list-style: none;
+        }
+
+        .wallet-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e9ecef;
+        }
+
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .wallet-balance {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .session-list {
+            list-style: none;
+        }
+
+        .session-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .session-current {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .session-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .preferences-section {
+            margin-bottom: 30px;
+        }
+
+        .preferences-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #667eea;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+            
+            .nav-tab {
+                flex: 1 1 50%;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-user-circle"></i> Blockchain Profile Manager</h1>
+            <p>Manage your blockchain identity, wallets, and preferences</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div id="authSection">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showAuthTab('login')">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button class="nav-tab" onclick="showAuthTab('register')">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginTab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <h2>Login to Your Account</h2>
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginUsername">Username or Email</label>
+                            <input type="text" id="loginUsername" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-user-plus"></i></div>
+                        <h2>Create New Account</h2>
+                    </div>
+
+                    <form id="registerForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="regUsername">Username</label>
+                                <input type="text" id="regUsername" required minlength="3">
+                            </div>
+                            <div class="form-group">
+                                <label for="regEmail">Email</label>
+                                <input type="email" id="regEmail" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="regPassword">Password</label>
+                                <input type="password" id="regPassword" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="regDisplayName">Display Name</label>
+                                <input type="text" id="regDisplayName">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Management Section -->
+        <div id="profileSection" class="hidden">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('profile')">
+                    <i class="fas fa-user"></i> Profile
+                </button>
+                <button class="nav-tab" onclick="showTab('wallets')">
+                    <i class="fas fa-wallet"></i> Wallets
+                </button>
+                <button class="nav-tab" onclick="showTab('preferences')">
+                    <i class="fas fa-cog"></i> Preferences
+                </button>
+                <button class="nav-tab" onclick="showTab('sessions')">
+                    <i class="fas fa-laptop"></i> Sessions
+                </button>
+                <button class="nav-tab" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profileTab" class="tab-content active">
+                <div class="card">
+                    <div class="profile-info" id="profileInfo">
+                        <!-- Profile info will be loaded here -->
+                    </div>
+
+                    <div class="stats-grid" id="profileStats">
+                        <!-- Stats will be loaded here -->
+                    </div>
+
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-edit"></i></div>
+                        <h2>Edit Profile</h2>
+                    </div>
+
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="profileDisplayName">Display Name</label>
+                                <input type="text" id="profileDisplayName">
+                            </div>
+                            <div class="form-group">
+                                <label for="profileEmail">Email</label>
+                                <input type="email" id="profileEmail">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="profileAvatar">Avatar URL</label>
+                            <input type="url" id="profileAvatar" placeholder="https://example.com/avatar.jpg">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Wallets Tab -->
+            <div id="walletsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-wallet"></i></div>
+                        <h2>My Wallets</h2>
+                        <button class="btn btn-primary" onclick="addWallet()">
+                            <i class="fas fa-plus"></i> Add Wallet
+                        </button>
+                    </div>
+
+                    <ul id="walletList" class="wallet-list">
+                        <!-- Wallet list will be loaded here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Preferences Tab -->
+            <div id="preferencesTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-cog"></i></div>
+                        <h2>User Preferences</h2>
+                    </div>
+
+                    <form id="preferencesForm">
+                        <div class="preferences-section">
+                            <h4>Appearance</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prefTheme">Theme</label>
+                                    <select id="prefTheme">
+                                        <option value="auto">Auto</option>
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prefCurrency">Currency</label>
+                                    <select id="prefCurrency">
+                                        <option value="BTC">BTC</option>
+                                        <option value="USD">USD</option>
+                                        <option value="EUR">EUR</option>
+                                        <option value="JPY">JPY</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preferences-section">
+                            <h4>Notifications</h4>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="notifEmail">
+                                    <label for="notifEmail">Email Notifications</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="notifPush">
+                                    <label for="notifPush">Push Notifications</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="notifTransactions">
+                                    <label for="notifTransactions">Transaction Alerts</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="notifMining">
+                                    <label for="notifMining">Mining Updates</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="preferences-section">
+                            <h4>Privacy</h4>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="privacyPublic">
+                                    <label for="privacyPublic">Public Profile</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="privacyBalance">
+                                    <label for="privacyBalance">Show Balance</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="privacyTransactions">
+                                    <label for="privacyTransactions">Show Transactions</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Preferences
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sessions Tab -->
+            <div id="sessionsTab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="icon"><i class="fas fa-laptop"></i></div>
+                        <h2>Active Sessions</h2>
+                    </div>
+
+                    <ul id="sessionsList" class="session-list">
+                        <!-- Sessions will be loaded here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+    </div>
+
+    <!-- Add Wallet Modal -->
+    <div id="walletModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-wallet"></i> Add Wallet Address</h3>
+                <button class="modal-close" onclick="closeModal('walletModal')">&times;</button>
+            </div>
+            <form id="addWalletForm">
+                <div class="form-group">
+                    <label for="walletAddress">Wallet Address</label>
+                    <input type="text" id="walletAddress" placeholder="Enter blockchain address" required>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('walletModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Wallet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let sessionToken = null;
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for existing session
+            sessionToken = localStorage.getItem('sessionToken');
+            if (sessionToken) {
+                loadProfile();
+            }
+
+            // Setup form handlers
+            setupFormHandlers();
+        });
+
+        function setupFormHandlers() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            document.getElementById('profileForm').addEventListener('submit', handleProfileUpdate);
+            document.getElementById('preferencesForm').addEventListener('submit', handlePreferencesUpdate);
+            document.getElementById('addWalletForm').addEventListener('submit', handleAddWallet);
+        }
+
+        // Authentication functions
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/profiles/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    sessionToken = result.sessionId;
+                    localStorage.setItem('sessionToken', sessionToken);
+                    currentUser = result.profile;
+                    showProfile();
+                    showAlert('Login successful!', 'success');
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Login failed. Please try again.', 'error');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const displayName = document.getElementById('regDisplayName').value;
+
+            try {
+                const response = await fetch('/api/profiles/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, displayName })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Account created successfully! Please login.', 'success');
+                    showAuthTab('login');
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                } else {
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Registration failed. Please try again.', 'error');
+            }
+        }
+
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profiles/me', {
+                    headers: { 'Authorization': `Bearer ${sessionToken}` }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    showProfile();
+                } else {
+                    // Invalid session
+                    localStorage.removeItem('sessionToken');
+                    sessionToken = null;
+                    showAuth();
+                }
+            } catch (error) {
+                showAlert('Failed to load profile', 'error');
+            }
+        }
+
+        function showProfile() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('profileSection').classList.remove('hidden');
+            
+            displayProfile();
+            loadWallets();
+            loadPreferences();
+            loadSessions();
+        }
+
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('profileSection').classList.add('hidden');
+        }
+
+        function displayProfile() {
+            if (!currentUser) return;
+
+            const profileInfo = document.getElementById('profileInfo');
+            const avatarInitials = currentUser.displayName.charAt(0).toUpperCase();
+            
+            profileInfo.innerHTML = `
+                <div class="profile-avatar" style="${currentUser.avatarUrl ? `background-image: url(${currentUser.avatarUrl}); background-size: cover;` : ''}">
+                    ${!currentUser.avatarUrl ? avatarInitials : ''}
+                </div>
+                <h3>${currentUser.displayName}</h3>
+                <div class="username">@${currentUser.username}</div>
+                <div class="email">${currentUser.email}</div>
+            `;
+
+            const profileStats = document.getElementById('profileStats');
+            profileStats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${currentUser.totalBalance.toFixed(4)}</div>
+                    <div class="stat-label">Total Balance (BTC)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${currentUser.walletAddresses.length}</div>
+                    <div class="stat-label">Wallets</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${currentUser.transactionCount}</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${Math.floor((Date.now() - currentUser.createdAt) / (1000 * 60 * 60 * 24))}</div>
+                    <div class="stat-label">Days Active</div>
+                </div>
+            `;
+
+            // Populate edit form
+            document.getElementById('profileDisplayName').value = currentUser.displayName;
+            document.getElementById('profileEmail').value = currentUser.email;
+            document.getElementById('profileAvatar').value = currentUser.avatarUrl || '';
+        }
+
+        async function loadWallets() {
+            if (!currentUser) return;
+
+            const walletList = document.getElementById('walletList');
+            
+            if (currentUser.walletAddresses.length === 0) {
+                walletList.innerHTML = `
+                    <li class="wallet-item">
+                        <div>
+                            <div>No wallets added yet</div>
+                            <button class="btn btn-primary" onclick="addWallet()">Add Your First Wallet</button>
+                        </div>
+                    </li>
+                `;
+                return;
+            }
+
+            let walletsHtml = '';
+            for (const address of currentUser.walletAddresses) {
+                try {
+                    const response = await fetch(`/api/balance/${address}`);
+                    const balanceData = await response.json();
+                    
+                    walletsHtml += `
+                        <li class="wallet-item">
+                            <div>
+                                <div class="wallet-address">${address}</div>
+                            </div>
+                            <div class="wallet-balance">${balanceData.balance.toFixed(4)} BTC</div>
+                        </li>
+                    `;
+                } catch (error) {
+                    walletsHtml += `
+                        <li class="wallet-item">
+                            <div>
+                                <div class="wallet-address">${address}</div>
+                            </div>
+                            <div class="wallet-balance">Error loading</div>
+                        </li>
+                    `;
+                }
+            }
+            walletList.innerHTML = walletsHtml;
+        }
+
+        function loadPreferences() {
+            if (!currentUser || !currentUser.preferences) return;
+
+            const prefs = currentUser.preferences;
+            
+            // Theme and currency
+            document.getElementById('prefTheme').value = prefs.theme || 'auto';
+            document.getElementById('prefCurrency').value = prefs.currency || 'BTC';
+            
+            // Notifications
+            document.getElementById('notifEmail').checked = prefs.notifications?.email !== false;
+            document.getElementById('notifPush').checked = prefs.notifications?.push !== false;
+            document.getElementById('notifTransactions').checked = prefs.notifications?.transactionAlerts !== false;
+            document.getElementById('notifMining').checked = prefs.notifications?.miningUpdates === true;
+            
+            // Privacy
+            document.getElementById('privacyPublic').checked = prefs.privacy?.publicProfile === true;
+            document.getElementById('privacyBalance').checked = prefs.privacy?.showBalance === true;
+            document.getElementById('privacyTransactions').checked = prefs.privacy?.showTransactions === true;
+        }
+
+        async function loadSessions() {
+            try {
+                const response = await fetch('/api/profiles/me/sessions', {
+                    headers: { 'Authorization': `Bearer ${sessionToken}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const sessionsList = document.getElementById('sessionsList');
+                    
+                    let sessionsHtml = '';
+                    data.sessions.forEach(session => {
+                        const isCurrent = session.sessionId === sessionToken;
+                        const lastActive = new Date(session.lastActiveAt).toLocaleString();
+                        const created = new Date(session.createdAt).toLocaleString();
+                        
+                        sessionsHtml += `
+                            <li class="session-item ${isCurrent ? 'session-current' : ''}">
+                                <div class="session-info">
+                                    <div>
+                                        <strong>${isCurrent ? 'Current Session' : 'Session'}</strong>
+                                        <br>IP: ${session.ipAddress}
+                                    </div>
+                                    <div>
+                                        <strong>Last Active:</strong>
+                                        <br>${lastActive}
+                                    </div>
+                                    <div>
+                                        <strong>Created:</strong>
+                                        <br>${created}
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                    });
+                    
+                    sessionsList.innerHTML = sessionsHtml;
+                }
+            } catch (error) {
+                showAlert('Failed to load sessions', 'error');
+            }
+        }
+
+        // Form handlers
+        async function handleProfileUpdate(e) {
+            e.preventDefault();
+            
+            const displayName = document.getElementById('profileDisplayName').value;
+            const email = document.getElementById('profileEmail').value;
+            const avatarUrl = document.getElementById('profileAvatar').value;
+
+            try {
+                const response = await fetch('/api/profiles/me', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}`
+                    },
+                    body: JSON.stringify({ displayName, email, avatarUrl })
+                });
+
+                if (response.ok) {
+                    showAlert('Profile updated successfully!', 'success');
+                    loadProfile(); // Reload profile data
+                } else {
+                    const result = await response.json();
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to update profile', 'error');
+            }
+        }
+
+        async function handlePreferencesUpdate(e) {
+            e.preventDefault();
+
+            const preferences = {
+                theme: document.getElementById('prefTheme').value,
+                currency: document.getElementById('prefCurrency').value,
+                notifications: {
+                    email: document.getElementById('notifEmail').checked,
+                    push: document.getElementById('notifPush').checked,
+                    transactionAlerts: document.getElementById('notifTransactions').checked,
+                    miningUpdates: document.getElementById('notifMining').checked
+                },
+                privacy: {
+                    publicProfile: document.getElementById('privacyPublic').checked,
+                    showBalance: document.getElementById('privacyBalance').checked,
+                    showTransactions: document.getElementById('privacyTransactions').checked
+                }
+            };
+
+            try {
+                const response = await fetch('/api/profiles/me/preferences', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}`
+                    },
+                    body: JSON.stringify(preferences)
+                });
+
+                if (response.ok) {
+                    showAlert('Preferences saved successfully!', 'success');
+                } else {
+                    const result = await response.json();
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to save preferences', 'error');
+            }
+        }
+
+        async function handleAddWallet(e) {
+            e.preventDefault();
+
+            const address = document.getElementById('walletAddress').value;
+
+            try {
+                const response = await fetch('/api/profiles/me/wallets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}`
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showAlert(`Wallet added successfully! Balance: ${result.balance} BTC`, 'success');
+                    closeModal('walletModal');
+                    document.getElementById('addWalletForm').reset();
+                    loadProfile(); // Reload to update balance
+                } else {
+                    const result = await response.json();
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to add wallet', 'error');
+            }
+        }
+
+        // UI functions
+        function showAuthTab(tab) {
+            document.querySelectorAll('#authSection .nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#authSection .tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('#profileSection .nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#profileSection .tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+        }
+
+        function addWallet() {
+            document.getElementById('walletModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/profiles/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${sessionToken}` }
+                });
+            } catch (error) {
+                // Continue with logout even if API call fails
+            }
+
+            localStorage.removeItem('sessionToken');
+            sessionToken = null;
+            currentUser = null;
+            showAuth();
+            showAlert('Logged out successfully', 'success');
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+            
+            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+            
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) alert.remove();
+            }, 5000);
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

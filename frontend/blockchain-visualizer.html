@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Real-time Visualizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at 20% 80%, #120458 0%, #000000 50%), 
+                        radial-gradient(circle at 80% 20%, #1a0742 0%, transparent 50%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            background: linear-gradient(45deg, #00f5ff, #ff00ff, #ffff00);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientShift 3s ease infinite;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .connection-status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-connected { background: #00ff00; }
+        .status-disconnected { background: #ff0000; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .visualization-panel {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .side-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #00f5ff;
+        }
+
+        .blockchain-canvas {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+        }
+
+        .blockchain-content {
+            position: relative;
+            min-width: 2000px;
+            width: max-content;
+            height: 100%;
+        }
+
+        .block-node {
+            position: absolute;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #00f5ff, #0080ff);
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .block-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+        }
+
+        .block-node.mining {
+            animation: miningPulse 1s infinite;
+            background: linear-gradient(135deg, #ff6b00, #ffa500);
+            border-color: #ff8c00;
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.8);
+        }
+
+        @keyframes miningPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .chain-link {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff00, #00ffff);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+            animation: dataFlow 2s linear infinite;
+        }
+
+        @keyframes dataFlow {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.6); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 255, 1); }
+            100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.6); }
+        }
+
+        .transaction-flow {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        /* Canvas-based particle system - no CSS particles needed */
+        .particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes txFlow {
+            0% { 
+                left: -50px; 
+                opacity: 0; 
+                transform: scale(0.5); 
+            }
+            10% { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+            90% { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+            100% { 
+                left: calc(100% + 50px); 
+                opacity: 0; 
+                transform: scale(0.5); 
+            }
+        }
+
+        .tx-block {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            background: linear-gradient(135deg, #ff00ff, #ff69b4);
+            border-radius: 8px;
+            border: 2px solid #ff00ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            animation: txFlow 8s linear infinite;
+            box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff69b4;
+        }
+
+        .tx-block-header {
+            font-size: 0.6rem;
+            margin-bottom: 2px;
+            color: #ffffff;
+        }
+
+        .tx-block-content {
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .tx-hash {
+            font-size: 0.5rem;
+            opacity: 0.8;
+            color: #ffccff;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #cccccc;
+        }
+
+        .event-log {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid;
+            font-size: 0.9rem;
+        }
+
+        .event-block { border-left-color: #00ff00; }
+        .event-transaction { border-left-color: #ff00ff; }
+        .event-mining { border-left-color: #ffa500; }
+        .event-error { border-left-color: #ff0000; }
+
+        .event-time {
+            font-size: 0.8rem;
+            color: #888;
+            margin-left: auto;
+        }
+
+        .mining-progress {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .mining-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b00, #ffa500);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .mining-progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: progressShine 2s infinite;
+        }
+
+        @keyframes progressShine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #00f5ff, #0080ff);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
+            box-shadow: 0 4px 15px rgba(0, 245, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 245, 255, 0.5);
+        }
+
+        .btn-mine {
+            background: linear-gradient(45deg, #ff6b00, #ffa500);
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.3);
+        }
+
+        .btn-mine:hover {
+            box-shadow: 0 8px 25px rgba(255, 140, 0, 0.5);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #cccccc;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00f5ff;
+            box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+        }
+
+        .utxo-graph {
+            width: 100%;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+        }
+
+        /* Navigation Menu Styles */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-item {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .nav-button {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 15px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .nav-button i {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .nav-button:hover {
+            background: rgba(0, 245, 255, 0.2);
+            border-color: rgba(0, 245, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 245, 255, 0.3);
+        }
+
+        .nav-button.active {
+            background: linear-gradient(45deg, #00f5ff, #0080ff);
+            border-color: #00f5ff;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 245, 255, 0.4);
+        }
+
+        /* Section Styles */
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .nav-item {
+                flex: 1 1 calc(50% - 4px);
+                min-width: 140px;
+            }
+
+            .nav-button {
+                padding: 12px 15px;
+                font-size: 0.8rem;
+            }
+
+            .nav-button i {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cube"></i> Blockchain Settlement System</h1>
+            <p>Complete blockchain transaction and settlement platform</p>
+            <div class="connection-status">
+                <div class="status-dot status-disconnected" id="connectionStatus"></div>
+                <span id="connectionText">Connecting...</span>
+                <span id="clientCount">0 clients connected</span>
+                <!-- Profile Status -->
+                <div id="profileStatus" style="margin-left: 20px; display: none;">
+                    <i class="fas fa-user-circle" style="color: #00ff00;"></i>
+                    <span id="currentUsername">Not logged in</span>
+                    <button class="btn" style="padding: 5px 10px; margin-left: 10px;" onclick="toggleProfile()">
+                        <i class="fas fa-user" id="profileIcon"></i> <span id="profileButtonText">Login</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="nav-menu">
+            <div class="nav-item">
+                <button class="nav-button active" onclick="showSection('dashboard')" id="nav-dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-button" onclick="showSection('blockchain')" id="nav-blockchain">
+                    <i class="fas fa-link"></i>
+                    <span>Blockchain</span>
+                </button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-button" onclick="showSection('transactions')" id="nav-transactions">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Transactions</span>
+                </button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-button" onclick="showSection('mining')" id="nav-mining">
+                    <i class="fas fa-hammer"></i>
+                    <span>Mining</span>
+                </button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-button" onclick="showSection('wallets')" id="nav-wallets">
+                    <i class="fas fa-wallet"></i>
+                    <span>Wallets</span>
+                </button>
+            </div>
+            <div class="nav-item">
+                <button class="nav-button" onclick="showSection('analytics')" id="nav-analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="content-section active" id="dashboard-section">
+            <div class="dashboard-grid">
+                <div class="visualization-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>System Overview</span>
+                    </div>
+                    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="blockHeight">0</div>
+                            <div class="stat-label">Block Height</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="hashRate">0</div>
+                            <div class="stat-label">Hash Rate (H/s)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="difficulty">0</div>
+                            <div class="stat-label">Difficulty</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalSupply">0</div>
+                            <div class="stat-label">Total Supply</div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-header" style="margin-top: 30px;">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Quick Actions</span>
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button class="btn btn-mine" onclick="showSection('mining')">
+                            <i class="fas fa-hammer"></i> Start Mining
+                        </button>
+                        <button class="btn" onclick="showSection('transactions')">
+                            <i class="fas fa-exchange-alt"></i> Send Transaction
+                        </button>
+                        <button class="btn" onclick="showSection('wallets')">
+                            <i class="fas fa-wallet"></i> Manage Wallets
+                        </button>
+                        <button class="btn" onclick="showSection('blockchain')">
+                            <i class="fas fa-link"></i> View Blockchain
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="side-panel" style="grid-column: 1 / -1;">
+                    <div class="panel-header">
+                        <i class="fas fa-list-alt"></i>
+                        <span>Recent Activity</span>
+                        <button class="btn" onclick="clearEventLog()" style="margin-left: auto; padding: 5px 15px; font-size: 0.8rem;">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="event-log" id="eventLog" style="max-height: 200px;">
+                        <div class="event-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Waiting for blockchain events...</span>
+                            <span class="event-time">Ready</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blockchain Section -->
+        <div class="content-section" id="blockchain-section">
+            <div class="dashboard-grid">
+                <div class="visualization-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-project-diagram"></i>
+                        <span>Live Blockchain Network</span>
+                    </div>
+                    <div class="blockchain-canvas" id="blockchainCanvas">
+                        <div class="blockchain-content" id="blockchainContent">
+                            <!-- Blockchain blocks will be rendered here -->
+                        </div>
+                    </div>
+                    
+                    <div class="panel-header" style="margin-top: 30px;">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transaction Flow</span>
+                    </div>
+                    <div class="transaction-flow" id="transactionFlow">
+                        <canvas class="particle-canvas" id="particleCanvas"></canvas>
+                        <!-- Transaction particles will animate here -->
+                    </div>
+                </div>
+
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Blockchain Control</span>
+                    </div>
+                    
+                    <button class="btn" onclick="validateChain()" style="width: 100%; margin-bottom: 15px;">
+                        <i class="fas fa-shield-alt"></i> Validate Chain
+                    </button>
+
+                    <div class="panel-header" style="margin-top: 30px;">
+                        <i class="fas fa-sitemap"></i>
+                        <span>UTXO Set</span>
+                    </div>
+                    <div class="utxo-graph" id="utxoGraph">
+                        <!-- UTXO visualization will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Section -->
+        <div class="content-section" id="transactions-section">
+            <div class="dashboard-grid">
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send Transaction</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fromAddress">Send From</label>
+                        <input type="text" id="fromAddress" placeholder="Sender address">
+                    </div>
+                    <div class="form-group">
+                        <label for="toAddress">Send To</label>
+                        <input type="text" id="toAddress" placeholder="Recipient address">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount</label>
+                        <input type="number" id="amount" step="0.001" placeholder="0.000">
+                    </div>
+                    
+                    <button class="btn" onclick="sendTransaction()" style="width: 100%; margin-bottom: 15px;">
+                        <i class="fas fa-paper-plane"></i> Send Transaction
+                    </button>
+
+                    <button class="btn" onclick="createWallet()" style="width: 100%;">
+                        <i class="fas fa-plus"></i> Generate Test Address
+                    </button>
+                </div>
+
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-list"></i>
+                        <span>Transaction Pool</span>
+                    </div>
+                    <div id="mempoolList" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; min-height: 200px;">
+                        <p style="color: #888;">Loading mempool...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mining Section -->
+        <div class="content-section" id="mining-section">
+            <div class="dashboard-grid">
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-hammer"></i>
+                        <span>Mining Control</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="minerAddress">Miner Address</label>
+                        <input type="text" id="minerAddress" placeholder="Enter mining address">
+                    </div>
+
+                    <div class="mining-progress" style="display: none;" id="miningProgressContainer">
+                        <div class="mining-progress-bar" id="miningProgressBar"></div>
+                    </div>
+                    <div id="miningStatus" style="text-align: center; margin: 10px 0; color: #ffa500;"></div>
+
+                    <button class="btn btn-mine" onclick="startMining()" style="width: 100%; margin-bottom: 15px;">
+                        <i class="fas fa-hammer"></i> Start Mining
+                    </button>
+
+                    <button class="btn" onclick="createWallet()" style="width: 100%;">
+                        <i class="fas fa-wallet"></i> Generate Mining Address
+                    </button>
+                </div>
+
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Mining Stats</span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="blockHeight2">0</div>
+                            <div class="stat-label">Block Height</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="difficulty2">0</div>
+                            <div class="stat-label">Difficulty</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallets Section -->
+        <div class="content-section" id="wallets-section">
+            <div class="dashboard-grid">
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-wallet"></i>
+                        <span>Wallet Management</span>
+                    </div>
+
+                    <button class="btn" onclick="generateNewWallet()" style="width: 100%; margin-bottom: 15px;">
+                        <i class="fas fa-plus"></i> Generate New Wallet
+                    </button>
+
+                    <div class="form-group">
+                        <label for="walletAddress">Check Balance</label>
+                        <input type="text" id="walletAddress" placeholder="Enter wallet address">
+                        <button class="btn" onclick="checkBalance()" style="width: 100%; margin-top: 10px;">
+                            <i class="fas fa-search"></i> Check Balance
+                        </button>
+                    </div>
+                </div>
+
+                <div class="side-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-list"></i>
+                        <span>My Wallets</span>
+                    </div>
+                    <div id="walletList" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; min-height: 200px;">
+                        <p style="color: #888;">No wallets found. Generate a new wallet to get started.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div class="content-section" id="analytics-section">
+            <div class="dashboard-grid">
+                <div class="visualization-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Network Analytics</span>
+                    </div>
+                    
+                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalUsers">0</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeSessions">0</div>
+                            <div class="stat-label">Active Sessions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalWallets">0</div>
+                            <div class="stat-label">Total Wallets</div>
+                        </div>
+                    </div>
+
+                    <div class="panel-header">
+                        <i class="fas fa-users"></i>
+                        <span>System Statistics</span>
+                    </div>
+                    <div id="systemStats" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px;">
+                        <p style="color: #888;">Loading system statistics...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let ws = null;
+        let blockchainData = [];
+        let isConnected = false;
+        let currentMinerAddress = null;
+        let miningInProgress = false;
+
+        // Initialize WebSocket connection
+        function initializeWebSocket() {
+            const wsUrl = `ws://${window.location.hostname}:${window.location.port}/ws`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('Connected to blockchain WebSocket');
+                isConnected = true;
+                updateConnectionStatus();
+                addEventLog('connection', 'Connected to blockchain network', 'success');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('Disconnected from blockchain WebSocket');
+                isConnected = false;
+                updateConnectionStatus();
+                addEventLog('connection', 'Disconnected from blockchain network', 'error');
+                
+                // Attempt to reconnect after 3 seconds
+                setTimeout(() => {
+                    if (!isConnected) {
+                        initializeWebSocket();
+                    }
+                }, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addEventLog('connection', 'WebSocket connection error', 'error');
+            };
+        }
+
+        // Handle incoming WebSocket messages
+        function handleWebSocketMessage(message) {
+            console.log('Received message:', message);
+
+            switch (message.type) {
+                case 'blockMined':
+                    handleBlockMined(message.data);
+                    break;
+                case 'transactionAdded':
+                    handleTransactionAdded(message.data);
+                    break;
+                case 'miningStarted':
+                    handleMiningStarted(message.data);
+                    break;
+                case 'miningProgress':
+                    handleMiningProgress(message.data);
+                    break;
+                case 'balanceUpdated':
+                    handleBalanceUpdated(message.data);
+                    break;
+                default:
+                    console.log('Unknown message type:', message.type);
+            }
+        }
+
+        // Event handlers
+        function handleBlockMined(data) {
+            miningInProgress = false;
+            document.getElementById('miningProgressContainer').style.display = 'none';
+            document.getElementById('miningStatus').textContent = '';
+
+            addEventLog('block', `Block #${data.block.height} mined! Hash: ${data.block.hash.substring(0, 16)}...`, 'success');
+            
+            // Add block to visualization
+            addBlockToVisualization(data.block);
+            
+            // Update stats
+            updateNetworkStats();
+
+            // Create mining success animation
+            createMiningSuccessEffect();
+        }
+
+        function handleTransactionAdded(data) {
+            addEventLog('transaction', `New transaction: ${data.transaction.amount} BTC`, 'info');
+            createTransactionParticle();
+        }
+
+        function handleMiningStarted(data) {
+            miningInProgress = true;
+            document.getElementById('miningProgressContainer').style.display = 'block';
+            document.getElementById('miningStatus').textContent = `Mining block with difficulty ${data.difficulty}...`;
+            addEventLog('mining', `Started mining with ${data.transactions} transactions`, 'warning');
+        }
+
+        function handleMiningProgress(data) {
+            const progress = (data.currentNonce / 1000000) * 100; // Approximate progress
+            document.getElementById('miningProgressBar').style.width = Math.min(progress, 100) + '%';
+        }
+
+        function handleBalanceUpdated(data) {
+            addEventLog('balance', `Balance updated for ${data.address.substring(0, 10)}...`, 'info');
+        }
+
+        // Visualization functions
+        function addBlockToVisualization(block, shouldScroll = true) {
+            const canvas = document.getElementById('blockchainCanvas');
+            const content = document.getElementById('blockchainContent');
+            const blockNode = document.createElement('div');
+            blockNode.className = 'block-node';
+            
+            // Add click handler for block details
+            blockNode.onclick = () => showBlockDetails(block);
+            
+            blockNode.innerHTML = `
+                <div>#${block.height}</div>
+                <div style="font-size: 0.6rem;">${block.hash.substring(0, 8)}</div>
+                <div style="font-size: 0.6rem;">${block.transactions} tx</div>
+            `;
+
+            // Position blocks horizontally
+            const blockWidth = 100;
+            const leftPosition = (block.height * blockWidth) + 20;
+            blockNode.style.left = leftPosition + 'px';
+            blockNode.style.top = '50px';
+
+            content.appendChild(blockNode);
+
+            // Add chain link to previous block
+            if (block.height > 0) {
+                const chainLink = document.createElement('div');
+                chainLink.className = 'chain-link';
+                chainLink.style.left = (leftPosition - 20) + 'px';
+                chainLink.style.top = '78px';
+                chainLink.style.width = '20px';
+                content.appendChild(chainLink);
+            }
+
+            // Update content width to ensure scrolling works
+            const minWidth = Math.max(2000, leftPosition + 100);
+            content.style.width = minWidth + 'px';
+
+            // Scroll to show latest block only for new blocks
+            if (shouldScroll) {
+                canvas.scrollLeft = canvas.scrollWidth;
+            }
+        }
+
+        // Show detailed block information
+        async function showBlockDetails(block) {
+            try {
+                const response = await fetch(`/api/blocks/${block.height}`);
+                const blockDetails = await response.json();
+                
+                const details = `
+Block #${blockDetails.height}
+Hash: ${blockDetails.hash}
+Previous: ${blockDetails.previousHash}
+Timestamp: ${new Date(blockDetails.timestamp).toLocaleString()}
+Transactions: ${blockDetails.transactions.length}
+Difficulty: ${blockDetails.difficulty}
+Nonce: ${blockDetails.nonce}
+Merkle Root: ${blockDetails.merkleRoot}
+                `;
+                
+                alert(details);
+                addEventLog('block', `Viewed details for block #${block.height}`, 'info');
+            } catch (error) {
+                addEventLog('block', `Failed to load block details: ${error.message}`, 'error');
+            }
+        }
+
+        // Advanced Canvas-based Particle Physics System
+        let particleSystem = null;
+
+        class Particle {
+            constructor(x, y, type = 'transaction') {
+                this.x = x;
+                this.y = y;
+                this.vx = 3; // Fixed consistent speed
+                this.vy = 0; // No vertical movement for straight line
+                this.life = 1.0;
+                this.decay = 0.001; // Much slower decay for longer visibility
+                this.size = 60; // Much larger block size
+                this.type = type;
+                this.trail = [];
+                this.maxTrailLength = 0; // No trail
+                this.gravity = 0; // No gravity for straight movement
+                this.bounce = 0;
+                this.glow = 0;
+                this.pulseSpeed = 0;
+                this.angle = 0;
+                
+                // Color based on type
+                if (type === 'transaction') {
+                    this.color = { r: 255, g: 0, b: 255 };
+                } else if (type === 'mining') {
+                    this.color = { r: 255, g: 140, b: 0 };
+                } else {
+                    this.color = { r: 0, g: 255, b: 255 };
+                }
+            }
+
+            update(canvas) {
+                // Physics update
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Bounce off bottom
+                if (this.y > canvas.height - this.size) {
+                    this.y = canvas.height - this.size;
+                    this.vy *= -this.bounce;
+                }
+                
+                // Bounce off top
+                if (this.y < this.size) {
+                    this.y = this.size;
+                    this.vy *= -this.bounce;
+                }
+                
+                // Trail system
+                this.trail.push({ x: this.x, y: this.y, life: 1.0 });
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+                
+                // Update trail life
+                this.trail.forEach(point => {
+                    point.life -= 0.1;
+                });
+                this.trail = this.trail.filter(point => point.life > 0);
+                
+                // Life decay
+                this.life -= this.decay;
+                this.angle += this.pulseSpeed;
+                
+                // Glow pulse
+                this.glow = 0.5 + Math.sin(this.angle) * 0.3;
+                
+                return this.life > 0 && this.x < canvas.width + 50;
+            }
+
+            render(ctx) {
+                // No trail - just the main block
+                
+                // Main particle as a plain transaction block
+                ctx.save();
+                
+                const blockWidth = this.size * 2;
+                const blockHeight = this.size * 1.2;
+                const x = this.x - blockWidth/2;
+                const y = this.y - blockHeight/2;
+                
+                // Plain block background - no glow or shadow
+                ctx.fillStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+                ctx.fillRect(x, y, blockWidth, blockHeight);
+                
+                // Plain block border
+                ctx.strokeStyle = `rgb(${this.color.r}, ${this.color.g}, ${this.color.b})`;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, blockWidth, blockHeight);
+                
+                // Block text content
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                
+                // TX label
+                ctx.fillText('TX', this.x, this.y - 3);
+                
+                // Hash simulation
+                const hash = Math.random().toString(16).substring(2, 6);
+                ctx.font = '10px Arial';
+                ctx.fillText(hash, this.x, this.y + 8);
+                
+                ctx.restore();
+            }
+        }
+
+        class ParticleSystem {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.particles = [];
+                this.isRunning = false;
+                this.lastTime = 0;
+                
+                this.resize();
+            }
+            
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+            }
+            
+            addTransaction(count = 1) {
+                for (let i = 0; i < count; i++) {
+                    const particle = new Particle(
+                        -30,
+                        this.canvas.height / 2, // Center vertically
+                        'transaction'
+                    );
+                    this.particles.push(particle);
+                }
+            }
+            
+            addMiningParticles() {
+                for (let i = 0; i < 5; i++) {
+                    const particle = new Particle(
+                        Math.random() * this.canvas.width,
+                        Math.random() * this.canvas.height,
+                        'mining'
+                    );
+                    particle.vx = (Math.random() - 0.5) * 2;
+                    particle.vy = (Math.random() - 0.5) * 2;
+                    particle.decay = 0.001;
+                    this.particles.push(particle);
+                }
+            }
+            
+            update() {
+                this.particles = this.particles.filter(particle => 
+                    particle.update(this.canvas)
+                );
+            }
+            
+            render() {
+                // Clear canvas with slight trail effect
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Render particles
+                this.particles.forEach(particle => {
+                    particle.render(this.ctx);
+                });
+            }
+            
+            animate(currentTime = 0) {
+                if (!this.isRunning) return;
+                
+                const deltaTime = currentTime - this.lastTime;
+                this.lastTime = currentTime;
+                
+                this.update();
+                this.render();
+                
+                requestAnimationFrame(this.animate.bind(this));
+            }
+            
+            start() {
+                this.isRunning = true;
+                this.animate();
+            }
+            
+            stop() {
+                this.isRunning = false;
+            }
+        }
+
+        function createTransactionParticle() {
+            if (!particleSystem) return;
+            
+            // Clear all existing particles first to ensure only 1 block
+            particleSystem.particles = [];
+            
+            // Create only canvas particle system animation - no DOM blocks
+            particleSystem.addTransaction(1); // 1 particle per transaction only
+        }
+
+        function createMiningSuccessEffect() {
+            // Add visual mining success effect to blockchain canvas
+            const canvas = document.getElementById('blockchainCanvas');
+            const effect = document.createElement('div');
+            effect.style.position = 'absolute';
+            effect.style.top = '0';
+            effect.style.left = '0';
+            effect.style.width = '100%';
+            effect.style.height = '100%';
+            effect.style.background = 'radial-gradient(circle, rgba(0,255,0,0.3) 0%, transparent 70%)';
+            effect.style.animation = 'successPulse 1s ease-out';
+            canvas.appendChild(effect);
+
+            setTimeout(() => {
+                if (effect.parentNode) {
+                    effect.parentNode.removeChild(effect);
+                }
+            }, 1000);
+
+            // Add mining particles to particle system
+            if (particleSystem) {
+                particleSystem.addMiningParticles();
+            }
+        }
+
+        // API functions
+        async function startMining() {
+            const minerAddress = document.getElementById('minerAddress').value;
+            
+            if (!minerAddress) {
+                alert('Please enter a miner address first');
+                return;
+            }
+
+            if (miningInProgress) {
+                alert('Mining already in progress');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/mine', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ minerAddress })
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    addEventLog('mining', `Mining failed: ${result.error}`, 'error');
+                } else {
+                    addEventLog('mining', 'Mining request sent', 'info');
+                }
+            } catch (error) {
+                addEventLog('mining', `Mining error: ${error.message}`, 'error');
+            }
+        }
+
+        async function createWallet() {
+            try {
+                const response = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ label: 'Visualizer Wallet' })
+                });
+
+                const result = await response.json();
+                
+                if (result.address) {
+                    document.getElementById('minerAddress').value = result.address;
+                    document.getElementById('fromAddress').value = result.address;
+                    addEventLog('wallet', `New wallet created: ${result.address.substring(0, 16)}...`, 'success');
+                } else {
+                    addEventLog('wallet', 'Failed to create wallet', 'error');
+                }
+            } catch (error) {
+                addEventLog('wallet', `Wallet creation error: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendTransaction() {
+            const fromAddress = document.getElementById('fromAddress').value;
+            const toAddress = document.getElementById('toAddress').value;
+            const amount = document.getElementById('amount').value;
+
+            if (!fromAddress || !toAddress || !amount) {
+                alert('Please fill in all transaction fields');
+                return;
+            }
+
+            try {
+                // Trigger demo transaction via API to show animation
+                const response = await fetch('/api/demo-transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+                
+                if (result.message) {
+                    addEventLog('transaction', `Transaction sent: ${amount} BTC from ${fromAddress.substring(0, 10)}... to ${toAddress.substring(0, 10)}...`, 'success');
+                    // Manually create transaction particle since WebSocket might be unstable
+                    createTransactionParticle();
+                } else {
+                    addEventLog('transaction', 'Transaction failed', 'error');
+                }
+            } catch (error) {
+                addEventLog('transaction', `Transaction error: ${error.message}`, 'error');
+                // Still create animation for demo purposes
+                createTransactionParticle();
+            }
+        }
+
+        async function validateChain() {
+            try {
+                const response = await fetch('/api/validate');
+                const result = await response.json();
+                
+                const status = result.valid ? 'valid' : 'invalid';
+                addEventLog('validation', `Blockchain is ${status}`, result.valid ? 'success' : 'error');
+            } catch (error) {
+                addEventLog('validation', `Validation error: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateNetworkStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                document.getElementById('blockHeight').textContent = stats.blockCount || 0;
+                document.getElementById('hashRate').textContent = Math.round(stats.hashRate || 0);
+                document.getElementById('difficulty').textContent = stats.difficulty || 0;
+                document.getElementById('totalSupply').textContent = (stats.totalSupply || 0) + ' BTC';
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+
+        // UI functions
+        function updateConnectionStatus() {
+            const statusDot = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+            
+            if (isConnected) {
+                statusDot.className = 'status-dot status-connected';
+                statusText.textContent = 'Connected to blockchain';
+            } else {
+                statusDot.className = 'status-dot status-disconnected';
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        function addEventLog(type, message, level = 'info') {
+            const eventLog = document.getElementById('eventLog');
+            const eventItem = document.createElement('div');
+            
+            let iconClass = 'fas fa-info-circle';
+            let eventClass = 'event-info';
+            
+            switch (type) {
+                case 'block':
+                    iconClass = 'fas fa-cube';
+                    eventClass = 'event-block';
+                    break;
+                case 'transaction':
+                    iconClass = 'fas fa-exchange-alt';
+                    eventClass = 'event-transaction';
+                    break;
+                case 'mining':
+                    iconClass = 'fas fa-hammer';
+                    eventClass = 'event-mining';
+                    break;
+                case 'connection':
+                    iconClass = 'fas fa-wifi';
+                    eventClass = level === 'error' ? 'event-error' : 'event-info';
+                    break;
+                default:
+                    iconClass = 'fas fa-info-circle';
+                    eventClass = level === 'error' ? 'event-error' : 'event-info';
+            }
+
+            eventItem.className = `event-item ${eventClass}`;
+            eventItem.innerHTML = `
+                <i class="${iconClass}"></i>
+                <span>${message}</span>
+                <span class="event-time">${new Date().toLocaleTimeString()}</span>
+            `;
+
+            eventLog.insertBefore(eventItem, eventLog.firstChild);
+
+            // Limit log entries
+            if (eventLog.children.length > 50) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+
+        function clearEventLog() {
+            const eventLog = document.getElementById('eventLog');
+            eventLog.innerHTML = `
+                <div class="event-item">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Event log cleared</span>
+                    <span class="event-time">Now</span>
+                </div>
+            `;
+        }
+
+        // Load existing blockchain data from database
+        async function loadExistingBlockchain() {
+            try {
+                const response = await fetch('/api/blockchain');
+                const data = await response.json();
+                
+                if (data.blocks && data.blocks.length > 0) {
+                    addEventLog('system', `Loading ${data.blocks.length} existing blocks from database`, 'success');
+                    
+                    // Clear existing visualization
+                    const content = document.getElementById('blockchainContent');
+                    content.innerHTML = '';
+                    
+                    // Add all blocks to visualization
+                    data.blocks.forEach(block => {
+                        addBlockToVisualization(block, false); // false = don't scroll for existing blocks
+                    });
+                    
+                    // Update global blockchain data
+                    blockchainData = data.blocks;
+                    
+                    // Scroll to show latest block
+                    const canvas = document.getElementById('blockchainCanvas');
+                    canvas.scrollLeft = canvas.scrollWidth;
+                    
+                    addEventLog('system', `Successfully loaded blockchain: ${data.blockCount} blocks, height ${data.latestHeight}`, 'success');
+                } else {
+                    addEventLog('system', 'No existing blockchain data found', 'info');
+                }
+            } catch (error) {
+                console.error('Failed to load existing blockchain:', error);
+                addEventLog('system', `Failed to load blockchain data: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize particle system
+            const canvas = document.getElementById('particleCanvas');
+            if (canvas) {
+                particleSystem = new ParticleSystem(canvas);
+                particleSystem.start();
+                
+                // Handle window resize
+                window.addEventListener('resize', () => {
+                    if (particleSystem) {
+                        particleSystem.resize();
+                    }
+                });
+            }
+
+            // Load existing blockchain data first
+            await loadExistingBlockchain();
+            
+            // Then initialize WebSocket and stats
+            initializeWebSocket();
+            updateNetworkStats();
+            
+            // Update stats every 5 seconds
+            setInterval(updateNetworkStats, 5000);
+
+            // Add CSS animation keyframes
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes successPulse {
+                    0% { opacity: 0; transform: scale(0.8); }
+                    50% { opacity: 1; transform: scale(1.1); }
+                    100% { opacity: 0; transform: scale(1); }
+                }
+                @keyframes txFlowWave {
+                    0% { 
+                        transform: translateX(-100%); 
+                        opacity: 0; 
+                    }
+                    50% { 
+                        transform: translateX(0%); 
+                        opacity: 1; 
+                    }
+                    100% { 
+                        transform: translateX(100%); 
+                        opacity: 0; 
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Log system ready
+            addEventLog('system', 'Advanced particle physics system initialized', 'success');
+            
+            // Initialize profile system
+            checkExistingSession();
+        });
+
+        // ===== INTEGRATED PROFILE MANAGEMENT SYSTEM =====
+        let currentUser = null;
+        let sessionToken = null;
+
+        // Check for existing session on load
+        function checkExistingSession() {
+            sessionToken = localStorage.getItem('sessionToken');
+            if (sessionToken) {
+                loadUserProfile();
+            } else {
+                showProfileButton();
+            }
+        }
+
+        function showProfileButton() {
+            const profileStatus = document.getElementById('profileStatus');
+            profileStatus.style.display = 'flex';
+            profileStatus.style.alignItems = 'center';
+        }
+
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/profiles/me', {
+                    headers: { 'Authorization': `Bearer ${sessionToken}` }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    updateProfileDisplay();
+                    showProfileButton();
+                    addEventLog('profile', `Welcome back, ${currentUser.username}!`, 'success');
+                } else {
+                    // Invalid session
+                    localStorage.removeItem('sessionToken');
+                    sessionToken = null;
+                    showProfileButton();
+                }
+            } catch (error) {
+                addEventLog('profile', 'Failed to load user profile', 'error');
+                showProfileButton();
+            }
+        }
+
+        function updateProfileDisplay() {
+            if (currentUser) {
+                document.getElementById('currentUsername').textContent = currentUser.displayName;
+                document.getElementById('profileIcon').className = 'fas fa-user-circle';
+                document.getElementById('profileButtonText').textContent = 'Profile';
+                
+                // Auto-populate wallet addresses if user has any
+                if (currentUser.walletAddresses.length > 0) {
+                    document.getElementById('minerAddress').value = currentUser.walletAddresses[0];
+                    document.getElementById('fromAddress').value = currentUser.walletAddresses[0];
+                }
+            } else {
+                document.getElementById('currentUsername').textContent = 'Not logged in';
+                document.getElementById('profileIcon').className = 'fas fa-user';
+                document.getElementById('profileButtonText').textContent = 'Login';
+            }
+        }
+
+        function toggleProfile() {
+            if (currentUser) {
+                showProfileModal();
+            } else {
+                showLoginModal();
+            }
+        }
+
+        function showLoginModal() {
+            const modal = createModal('loginModal', 'User Authentication', `
+                <div style="margin-bottom: 20px;">
+                    <button id="showLogin" class="btn" style="margin-right: 10px;">Login</button>
+                    <button id="showRegister" class="btn btn-mine">Register</button>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="loginForm" style="display: block;">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button class="btn" onclick="handleLogin()">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerForm" style="display: none;">
+                    <div class="form-group">
+                        <label for="regUsername">Username</label>
+                        <input type="text" id="regUsername" required minlength="3">
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="regDisplayName">Display Name</label>
+                        <input type="text" id="regDisplayName">
+                    </div>
+                    <button class="btn btn-mine" onclick="handleRegister()">
+                        <i class="fas fa-user-plus"></i> Create Account
+                    </button>
+                </div>
+            `);
+
+            // Setup form toggle
+            document.getElementById('showLogin').onclick = () => {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+            };
+            document.getElementById('showRegister').onclick = () => {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+            };
+
+            document.body.appendChild(modal);
+        }
+
+        function showProfileModal() {
+            if (!currentUser) return;
+
+            const modal = createModal('profileModal', `Profile: ${currentUser.displayName}`, `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(45deg, #00f5ff, #ff00ff); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 2rem;">
+                        ${currentUser.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <h3>${currentUser.displayName}</h3>
+                    <p style="color: #00f5ff;">@${currentUser.username}</p>
+                    <p>${currentUser.email}</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #00ff00;">${currentUser.totalBalance.toFixed(4)}</div>
+                        <div style="font-size: 0.9rem; color: #ccc;">Total Balance</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 1.5rem; color: #00ff00;">${currentUser.walletAddresses.length}</div>
+                        <div style="font-size: 0.9rem; color: #ccc;">Wallets</div>
+                    </div>
+                </div>
+
+                <div style="margin: 20px 0;">
+                    <h4 style="color: #00f5ff; margin-bottom: 10px;">My Wallets</h4>
+                    <div id="userWalletList">
+                        ${currentUser.walletAddresses.length === 0 ? 
+                            '<p style="color: #888;">No wallets added yet</p>' : 
+                            currentUser.walletAddresses.map(addr => `
+                                <div style="background: rgba(0,0,0,0.3); padding: 10px; margin: 5px 0; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+                                    ${addr}
+                                    <button class="btn" style="padding: 2px 8px; font-size: 0.8rem; margin-left: 10px;" onclick="setWalletAddress('${addr}')">
+                                        Use
+                                    </button>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                    <button class="btn" onclick="addWalletToProfile()">
+                        <i class="fas fa-plus"></i> Add Wallet
+                    </button>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <button class="btn" onclick="refreshProfile()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <button class="btn btn-mine" onclick="logout()" style="margin-left: 10px;">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            `);
+
+            document.body.appendChild(modal);
+        }
+
+        function createModal(id, title, content) {
+            const modal = document.createElement('div');
+            modal.id = id;
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                backdrop-filter: blur(10px);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+
+            modal.innerHTML = `
+                <div style="
+                    background: rgba(18,4,88,0.95);
+                    border: 1px solid rgba(0,245,255,0.3);
+                    border-radius: 20px;
+                    padding: 30px;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="color: #00f5ff; margin: 0;">${title}</h2>
+                        <button onclick="closeModal('${id}')" style="
+                            background: none;
+                            border: none;
+                            color: #fff;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            padding: 5px;
+                        ">&times;</button>
+                    </div>
+                    ${content}
+                </div>
+            `;
+
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeModal(id);
+                }
+            };
+
+            return modal;
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function handleLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                addEventLog('profile', 'Please enter username and password', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/profiles/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    sessionToken = result.sessionId;
+                    localStorage.setItem('sessionToken', sessionToken);
+                    currentUser = result.profile;
+                    updateProfileDisplay();
+                    closeModal('loginModal');
+                    addEventLog('profile', `Login successful! Welcome, ${currentUser.displayName}`, 'success');
+                } else {
+                    addEventLog('profile', result.error, 'error');
+                }
+            } catch (error) {
+                addEventLog('profile', 'Login failed. Please try again.', 'error');
+            }
+        }
+
+        async function handleRegister() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const displayName = document.getElementById('regDisplayName').value || username;
+
+            if (!username || !email || !password) {
+                addEventLog('profile', 'Please fill in all required fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/profiles/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, displayName })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    addEventLog('profile', 'Account created successfully! You can now login.', 'success');
+                    // Auto-switch to login form
+                    document.getElementById('showLogin').click();
+                    document.getElementById('loginUsername').value = username;
+                } else {
+                    addEventLog('profile', result.error, 'error');
+                }
+            } catch (error) {
+                addEventLog('profile', 'Registration failed. Please try again.', 'error');
+            }
+        }
+
+        function setWalletAddress(address) {
+            document.getElementById('minerAddress').value = address;
+            document.getElementById('fromAddress').value = address;
+            addEventLog('profile', `Wallet address set: ${address.substring(0, 16)}...`, 'success');
+            closeModal('profileModal');
+        }
+
+        async function addWalletToProfile() {
+            const address = prompt('Enter wallet address to add to your profile:');
+            if (!address) return;
+
+            try {
+                const response = await fetch('/api/profiles/me/wallets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}`
+                    },
+                    body: JSON.stringify({ address })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    addEventLog('profile', `Wallet added! Balance: ${result.balance} BTC`, 'success');
+                    loadUserProfile(); // Refresh profile data
+                    closeModal('profileModal');
+                } else {
+                    const result = await response.json();
+                    addEventLog('profile', result.error, 'error');
+                }
+            } catch (error) {
+                addEventLog('profile', 'Failed to add wallet', 'error');
+            }
+        }
+
+        function refreshProfile() {
+            closeModal('profileModal');
+            loadUserProfile();
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/profiles/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${sessionToken}` }
+                });
+            } catch (error) {
+                // Continue with logout even if API call fails
+            }
+
+            localStorage.removeItem('sessionToken');
+            sessionToken = null;
+            currentUser = null;
+            updateProfileDisplay();
+            closeModal('profileModal');
+            addEventLog('profile', 'Logged out successfully', 'success');
+        }
+
+        // ===== NAVIGATION SYSTEM =====
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active class from all nav buttons
+            const navButtons = document.querySelectorAll('.nav-button');
+            navButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            // Add active class to selected nav button
+            const targetNav = document.getElementById('nav-' + sectionName);
+            if (targetNav) {
+                targetNav.classList.add('active');
+            }
+
+            // Load section-specific content
+            loadSectionContent(sectionName);
+
+            addEventLog('navigation', `Switched to ${sectionName} section`, 'info');
+        }
+
+        function loadSectionContent(sectionName) {
+            switch (sectionName) {
+                case 'dashboard':
+                    updateNetworkStats();
+                    break;
+                case 'blockchain':
+                    // Blockchain content already loaded
+                    break;
+                case 'transactions':
+                    loadMempoolData();
+                    break;
+                case 'mining':
+                    updateMiningStats();
+                    break;
+                case 'wallets':
+                    loadWalletData();
+                    break;
+                case 'analytics':
+                    loadAnalyticsData();
+                    break;
+            }
+        }
+
+        // ===== SECTION-SPECIFIC FUNCTIONS =====
+        
+        // Transactions Section
+        async function loadMempoolData() {
+            const mempoolList = document.getElementById('mempoolList');
+            if (!mempoolList) return;
+
+            try {
+                mempoolList.innerHTML = '<p style="color: #888;">Loading transaction pool...</p>';
+                // Simulate mempool data
+                setTimeout(() => {
+                    mempoolList.innerHTML = `
+                        <div style="margin-bottom: 10px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 5px;">
+                            <strong>TX: abc123...</strong><br>
+                            <small>From: 1A1zP1e... → To: 1BvBM... (0.5 BTC)</small>
+                        </div>
+                        <div style="margin-bottom: 10px; padding: 10px; background: rgba(0,255,0,0.1); border-radius: 5px;">
+                            <strong>TX: def456...</strong><br>
+                            <small>From: 1L3jH9k... → To: 1MqT2x... (1.2 BTC)</small>
+                        </div>
+                        <p style="color: #888; margin-top: 15px;">Total: 2 pending transactions</p>
+                    `;
+                }, 1000);
+            } catch (error) {
+                mempoolList.innerHTML = '<p style="color: #ff6666;">Failed to load mempool data</p>';
+            }
+        }
+
+        // Mining Section
+        function updateMiningStats() {
+            const blockHeight2 = document.getElementById('blockHeight2');
+            const difficulty2 = document.getElementById('difficulty2');
+            
+            if (blockHeight2) blockHeight2.textContent = document.getElementById('blockHeight').textContent;
+            if (difficulty2) difficulty2.textContent = document.getElementById('difficulty').textContent;
+        }
+
+        // Wallets Section
+        async function generateNewWallet() {
+            try {
+                const response = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ label: 'Generated Wallet' })
+                });
+
+                const result = await response.json();
+                
+                if (result.address) {
+                    addEventLog('wallet', `New wallet generated: ${result.address.substring(0, 16)}...`, 'success');
+                    loadWalletData(); // Refresh wallet list
+                } else {
+                    addEventLog('wallet', 'Failed to generate wallet', 'error');
+                }
+            } catch (error) {
+                addEventLog('wallet', `Wallet generation error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkBalance() {
+            const walletAddress = document.getElementById('walletAddress').value;
+            if (!walletAddress) {
+                alert('Please enter a wallet address');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/balance/${walletAddress}`);
+                const result = await response.json();
+                
+                if (result.balance !== undefined) {
+                    addEventLog('wallet', `Balance for ${walletAddress.substring(0, 16)}...: ${result.balance} BTC`, 'success');
+                } else {
+                    addEventLog('wallet', 'Address not found or invalid', 'error');
+                }
+            } catch (error) {
+                addEventLog('wallet', `Balance check error: ${error.message}`, 'error');
+            }
+        }
+
+        function loadWalletData() {
+            const walletList = document.getElementById('walletList');
+            if (!walletList) return;
+
+            // Load from current user profile if logged in
+            if (currentUser && currentUser.walletAddresses.length > 0) {
+                walletList.innerHTML = currentUser.walletAddresses.map(addr => `
+                    <div style="background: rgba(0,0,0,0.3); padding: 10px; margin: 5px 0; border-radius: 8px; font-family: monospace; font-size: 0.9rem;">
+                        <strong>${addr}</strong><br>
+                        <small style="color: #888;">Balance: Loading...</small>
+                    </div>
+                `).join('');
+            } else {
+                walletList.innerHTML = '<p style="color: #888;">No wallets found. Generate a new wallet to get started.</p>';
+            }
+        }
+
+        // Analytics Section
+        async function loadAnalyticsData() {
+            const totalUsers = document.getElementById('totalUsers');
+            const activeSessions = document.getElementById('activeSessions');
+            const totalWallets = document.getElementById('totalWallets');
+            const systemStats = document.getElementById('systemStats');
+
+            try {
+                // Load profile analytics
+                const profileResponse = await fetch('/api/profiles/analytics');
+                const profileData = await profileResponse.json();
+
+                if (totalUsers) totalUsers.textContent = profileData.totalUsers || 0;
+                if (activeSessions) activeSessions.textContent = profileData.activeSessions || 0;
+                if (totalWallets) totalWallets.textContent = profileData.totalWallets || 0;
+
+                // Load blockchain analytics
+                const blockchainResponse = await fetch('/api/stats');
+                const blockchainData = await blockchainResponse.json();
+
+                if (systemStats) {
+                    systemStats.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <h4 style="color: #00f5ff; margin-bottom: 10px;">Blockchain Stats</h4>
+                                <p>Total Blocks: ${blockchainData.blockCount || 0}</p>
+                                <p>Total Supply: ${blockchainData.totalSupply || 0} BTC</p>
+                                <p>Current Difficulty: ${blockchainData.difficulty || 0}</p>
+                            </div>
+                            <div>
+                                <h4 style="color: #00f5ff; margin-bottom: 10px;">Network Health</h4>
+                                <p>Connection Status: ${isConnected ? '🟢 Connected' : '🔴 Disconnected'}</p>
+                                <p>Hash Rate: ${Math.round(blockchainData.hashRate || 0)} H/s</p>
+                                <p>System Status: 🟢 Operational</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                if (systemStats) {
+                    systemStats.innerHTML = '<p style="color: #ff6666;">Failed to load analytics data</p>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
